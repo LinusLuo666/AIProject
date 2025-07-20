@@ -69,13 +69,13 @@ public class UserRoleController {
                 .map(user -> {
                     Role role = roleRepository.findById(roleId).orElse(null);
                     if (role == null) {
-                        return ResponseEntity.notFound().build();
+                        return null;
                     }
                     
                     user.getRoles().add(role);
                     User savedUser = userRepository.save(user);
-                    return ResponseEntity.ok(new UserResponse(savedUser));
-                })
+                    return new UserResponse(savedUser);
+                }).map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }
 
@@ -90,13 +90,13 @@ public class UserRoleController {
                 .map(user -> {
                     Role role = roleRepository.findById(roleId).orElse(null);
                     if (role == null) {
-                        return ResponseEntity.notFound().build();
+                        return null;
                     }
                     
                     user.getRoles().remove(role);
                     User savedUser = userRepository.save(user);
-                    return ResponseEntity.ok(new UserResponse(savedUser));
-                })
+                    return new UserResponse(savedUser);
+                }).map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }
 }

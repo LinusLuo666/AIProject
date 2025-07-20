@@ -2,6 +2,7 @@ package com.example.authsystem.controller;
 
 import com.example.authsystem.dto.JwtAuthenticationResponse;
 import com.example.authsystem.dto.LoginRequest;
+import com.example.authsystem.dto.MenuDTO;
 import com.example.authsystem.entity.Menu;
 import com.example.authsystem.entity.User;
 import com.example.authsystem.repository.MenuRepository;
@@ -40,7 +41,7 @@ public class AuthController {
 
     @PostMapping("/login")
     @Operation(summary = "User login", description = "Authenticate user and return JWT token")
-    public ResponseEntity<? extends Object> authenticateUser(@Valid @RequestBody LoginRequest loginRequest) {
+    public ResponseEntity<JwtAuthenticationResponse> authenticateUser(@Valid @RequestBody LoginRequest loginRequest) {
         try {
             Authentication authentication = authenticationManager.authenticate(
                     new UsernamePasswordAuthenticationToken(
@@ -54,7 +55,7 @@ public class AuthController {
 
             User user = userRepository.findByUsername(loginRequest.getUsername()).orElse(null);
             if (user == null) {
-                return ResponseEntity.badRequest().body("User not found");
+                return ResponseEntity.badRequest().body(new JwtAuthenticationResponse("", "", null, null));
             }
 
             List<String> roles = user.getRoles().stream()
@@ -62,20 +63,20 @@ public class AuthController {
                     .collect(Collectors.toList());
 
             List<Menu> userMenus = menuRepository.findByUsername(user.getUsername());
-            List<JwtAuthenticationResponse.MenuDTO> menuDTOs = buildMenuTree(userMenus);
+            List<MenuDTO> menuDTOs = buildMenuTree(userMenus);
 
             JwtAuthenticationResponse response = new JwtAuthenticationResponse(jwt, user.getUsername(), roles, menuDTOs);
             return ResponseEntity.ok(response);
 
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body("Invalid username or password");
+            return ResponseEntity.badRequest().body(new JwtAuthenticationResponse("", "", null, null));
         }
     }
 
-    private List<JwtAuthenticationResponse.MenuDTO> buildMenuTree(List<Menu> menus) {
-        List<JwtAuthenticationResponse.MenuDTO> rootMenus = menus.stream()
+    private List<MenuDTO> buildMenuTree(List<Menu> menus) {
+        List<MenuDTO> rootMenus = menus.stream()
                 .filter(menu -> menu.getParentId() == 0)
-                .map(this::convertToDTO)
+                .map(this::convertToMenuDTO)
                 .collect(Collectors.toList());
 
         rootMenus.forEach(menu -> menu.setChildren(getChildrenMenus(menus, menu.getId())));
@@ -83,15 +84,15 @@ public class AuthController {
         return rootMenus;
     }
 
-    private List<JwtAuthenticationResponse.MenuDTO> getChildrenMenus(List<Menu> menus, Long parentId) {
+    private List<MenuDTO> getChildrenMenus(List<Menu> menus, Long parentId) {
         return menus.stream()
                 .filter(menu -> menu.getParentId().equals(parentId))
-                .map(this::convertToDTO)
+                .map(this::convertToMenuDTO)
                 .collect(Collectors.toList());
     }
 
-    private JwtAuthenticationResponse.MenuDTO convertToDTO(Menu menu) {
-        return new JwtAuthenticationResponse.MenuDTO(
+    private MenuDTO convertToMenuDTO(Menu menu) {
+        return new MenuDTO(
                 menu.getId(),
                 menu.getName(),
                 menu.getPath(),

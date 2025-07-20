@@ -76,7 +76,7 @@ public class UserController {
     @Operation(summary = "Create user", description = "Create a new user")
     public ResponseEntity<UserResponse> createUser(@Valid @RequestBody UserRequest userRequest) {
         if (userRepository.existsByUsername(userRequest.getUsername())) {
-            return ResponseEntity.badRequest().body(null);
+            return ResponseEntity.badRequest().build();
         }
 
         User user = new User();
@@ -97,7 +97,7 @@ public class UserController {
         return userRepository.findById(id)
                 .map(user -> {
                     if (!user.getUsername().equals(userRequest.getUsername()) && userRepository.existsByUsername(userRequest.getUsername())) {
-                        return ResponseEntity.badRequest().body(null);
+                        return null;
                     }
 
                     user.setUsername(userRequest.getUsername());
@@ -110,8 +110,8 @@ public class UserController {
                     }
 
                     User updatedUser = userRepository.save(user);
-                    return ResponseEntity.ok(new UserResponse(updatedUser));
-                })
+                    return new UserResponse(updatedUser);
+                }).map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }
 
@@ -119,12 +119,13 @@ public class UserController {
     @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Delete user", description = "Delete user by ID")
     public ResponseEntity<Void> deleteUser(@PathVariable Long id) {
-        return userRepository.findById(id)
-                .map(user -> {
-                    userRepository.delete(user);
-                    return ResponseEntity.noContent().build();
-                })
-                .orElse(ResponseEntity.notFound().build());
+        java.util.Optional<User> optionalUser = userRepository.findById(id);
+        if (optionalUser.isPresent()) {
+            userRepository.delete(optionalUser.get());
+            return ResponseEntity.noContent().build();
+        } else {
+            return ResponseEntity.notFound().build();
+        }
     }
 
     @PatchMapping("/{id}/status")

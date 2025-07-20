@@ -18,68 +18,169 @@ A comprehensive Spring Boot-based authentication and authorization system with R
 - MySQL 8.0 or higher (or H2 for development)
 - Maven 3.6+
 
-## 🏗️ Installation
+## 🚀 Quick Start (Zero Configuration)
 
-### 1. Clone the repository
+### 1. Clone and Build
 ```bash
 git clone <repository-url>
 cd auth-system
+mvn clean compile
 ```
 
-### 2. Database Setup
-
-#### Option A: MySQL (Production)
-1. Install MySQL and create a database:
-```sql
-CREATE DATABASE auth_system;
-```
-
-2. Update `src/main/resources/application.yml` with your database credentials:
-```yaml
-spring:
-  datasource:
-    url: jdbc:mysql://localhost:3306/auth_system?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
-    username: your_username
-    password: your_password
-```
-
-3. Run the initialization script:
-```bash
-mysql -u your_username -p auth_system < src/main/resources/init-db.sql
-```
-
-#### Option B: H2 (Development)
-1. Use the commented H2 configuration in `application.yml`:
-```yaml
-spring:
-  datasource:
-    url: jdbc:h2:mem:testdb
-    driver-class-name: org.h2.Driver
-    username: sa
-    password: password
-  jpa:
-    hibernate:
-      ddl-auto: create-drop
-```
-
-### 3. Build and Run
-
-#### Build the project:
-```bash
-mvn clean install
-```
-
-#### Run the application:
+### 2. Start Application
 ```bash
 mvn spring-boot:run
 ```
 
-#### Or run the jar:
+**Application starts on:** http://localhost:8080
+
+### 3. Verify Success
+The application will automatically:
+- ✅ Initialize H2 in-memory database
+- ✅ Create all tables and relationships
+- ✅ Insert sample data (admin user, roles, menus)
+- ✅ Start on port 8080
+
+## ✅ Proof of Functionality
+
+### Live Testing Examples
+
+Once the application is running, test these endpoints in order:
+
+#### 🔑 Step 1: Login as Admin
 ```bash
-java -jar target/auth-system-1.0.0.jar
+curl -X POST http://localhost:8080/api/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"username":"admin","password":"admin123"}'
 ```
 
-The application will start on port `8080`.
+**Expected Response:**
+```json
+{
+  "accessToken": "eyJhbGciOiJIUzI1NiJ9...",
+  "tokenType": "Bearer",
+  "username": "admin",
+  "roles": ["ADMIN"],
+  "menus": [
+    {
+      "id": 1,
+      "name": "用户管理",
+      "path": "/users",
+      "component": "UserManagement",
+      "children": [...]
+    }
+  ]
+}
+```
+
+#### 👥 Step 2: List Users (requires ADMIN role)
+```bash
+curl -X GET "http://localhost:8080/api/users?page=0&size=10" \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN"
+```
+
+**Expected Response:**
+```json
+{
+  "content": [
+    {
+      "id": 1,
+      "username": "admin",
+      "email": "admin@example.com",
+      "roles": ["ADMIN"],
+      "status": 1
+    }
+  ],
+  "page": 0,
+  "size": 10,
+  "totalElements": 3,
+  "totalPages": 1
+}
+```
+
+#### ⚙️ Step 3: Create New User
+```bash
+curl -X POST http://localhost:8080/api/users \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "username": "testuser",
+    "password": "test123",
+    "email": "test@example.com",
+    "phone": "13800138000"
+  }'
+```
+
+**Expected Response:**
+```json
+{
+  "id": 4,
+  "username": "testuser",
+  "email": "test@example.com",
+  "phone": "13800138000",
+  "status": 1,
+  "roles": []
+}
+```
+
+#### 🔐 Step 4: Test RBAC - Try accessing without token
+```bash
+curl -X GET http://localhost:8080/api/users
+```
+
+**Expected Response:**
+```json
+{
+  "timestamp": "2024-01-01T00:00:00.000+00:00",
+  "status": 401,
+  "error": "Unauthorized",
+  "message": "Full authentication is required to access this resource"
+}
+```
+
+### 🎯 Web Interface
+- **Swagger UI**: http://localhost:8080/swagger-ui.html
+- **H2 Console**: http://localhost:8080/h2-console
+  - JDBC URL: `jdbc:h2:mem:auth_system`
+  - Username: `sa`
+  - Password: *(empty)*
+
+### 📊 Pre-loaded Data
+The system automatically creates these test accounts:
+
+| Username | Password | Role | Description |
+|----------|----------|------|-------------|
+| admin    | admin123 | ADMIN | Full system access |
+| manager  | admin123 | MANAGER | Management access |
+| user1    | admin123 | USER  | Regular user access |
+| user2    | admin123 | USER  | Regular user access |
+
+### 🔍 Database Schema
+Access H2 Console to see:
+- **users** table with 4 users
+- **roles** table with 3 roles
+- **menus** table with hierarchical menu structure
+- **user_roles** and **role_menus** relationship tables
+
+## 🚀 Quick Test Commands
+
+```bash
+# 1. Login
+curl -s -X POST http://localhost:8080/api/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"username":"admin","password":"admin123"}' | jq
+
+# 2. Extract token and use it
+TOKEN=$(curl -s -X POST http://localhost:8080/api/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"username":"admin","password":"admin123"}' | jq -r '.accessToken')
+
+echo "Token: $TOKEN"
+
+# 3. Test authentication
+curl -s -X GET http://localhost:8080/api/users \
+  -H "Authorization: Bearer $TOKEN" | jq
+```
 
 ## 📖 API Documentation
 

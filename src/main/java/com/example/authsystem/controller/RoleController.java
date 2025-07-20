@@ -75,7 +75,7 @@ public class RoleController {
     @Operation(summary = "Create role", description = "Create a new role")
     public ResponseEntity<RoleResponse> createRole(@Valid @RequestBody RoleRequest roleRequest) {
         if (roleRepository.existsByName(roleRequest.getName())) {
-            return ResponseEntity.badRequest().body(null);
+            return ResponseEntity.badRequest().build();
         }
 
         Role role = new Role();
@@ -94,7 +94,7 @@ public class RoleController {
         return roleRepository.findById(id)
                 .map(role -> {
                     if (!role.getName().equals(roleRequest.getName()) && roleRepository.existsByName(roleRequest.getName())) {
-                        return ResponseEntity.badRequest().body(null);
+                        return null;
                     }
 
                     role.setName(roleRequest.getName());
@@ -102,8 +102,8 @@ public class RoleController {
                     role.setStatus(roleRequest.getStatus());
 
                     Role updatedRole = roleRepository.save(role);
-                    return ResponseEntity.ok(new RoleResponse(updatedRole));
-                })
+                    return new RoleResponse(updatedRole);
+                }).map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }
 
@@ -111,12 +111,13 @@ public class RoleController {
     @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Delete role", description = "Delete role by ID")
     public ResponseEntity<Void> deleteRole(@PathVariable Long id) {
-        return roleRepository.findById(id)
-                .map(role -> {
-                    roleRepository.delete(role);
-                    return ResponseEntity.noContent().build();
-                })
-                .orElse(ResponseEntity.notFound().build());
+        java.util.Optional<Role> optionalRole = roleRepository.findById(id);
+        if (optionalRole.isPresent()) {
+            roleRepository.delete(optionalRole.get());
+            return ResponseEntity.noContent().build();
+        } else {
+            return ResponseEntity.notFound().build();
+        }
     }
 
     @GetMapping("/active")
