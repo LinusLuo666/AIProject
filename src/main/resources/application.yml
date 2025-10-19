@@ -45,3 +45,11 @@ springdoc:
     path: /api-docs
   swagger-ui:
     path: /swagger-ui.html
+
+video-editor:
+  workspace-path: ./workspace
+  allowed-extensions:
+    - mp4
+    - mov
+    - mkv
+  output-prefix: edited_
