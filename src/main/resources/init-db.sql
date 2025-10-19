@@ -91,3 +91,33 @@ INSERT INTO role_menus (role_id, menu_id) VALUES
 INSERT INTO user_roles (user_id, role_id) VALUES
 (1, 1),  -- admin has ADMIN role
 (2, 2);  -- user1 has USER role
+
+-- Video tasks table
+CREATE TABLE IF NOT EXISTS video_tasks (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    source_file_name VARCHAR(255) NOT NULL,
+    quality_profile VARCHAR(100),
+    status VARCHAR(20) NOT NULL,
+    command_preview VARCHAR(1000),
+    last_message VARCHAR(500),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS video_task_segments (
+    video_task_id BIGINT NOT NULL,
+    segment_index INT NOT NULL,
+    start_second INT,
+    end_second INT,
+    sort_order INT,
+    PRIMARY KEY (video_task_id, segment_index),
+    FOREIGN KEY (video_task_id) REFERENCES video_tasks(id) ON DELETE CASCADE
+);
+
+-- Sample video task data
+INSERT INTO video_tasks (source_file_name, quality_profile, status, command_preview, last_message)
+VALUES ('sample-source.mp4', 'HD', 'PENDING', 'ffmpeg -i "sample-source.mp4" -profile:v HD "output_HD.mp4"', 'Awaiting approval');
+
+INSERT INTO video_task_segments (video_task_id, segment_index, start_second, end_second, sort_order)
+VALUES (1, 0, 0, 60, 1),
+       (1, 1, 120, 180, 2);
