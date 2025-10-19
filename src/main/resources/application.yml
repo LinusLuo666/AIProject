@@ -45,3 +45,19 @@ springdoc:
     path: /api-docs
   swagger-ui:
     path: /swagger-ui.html
+ 
+video-editor:
+  ffmpeg-path: /usr/bin/ffmpeg
+  workspace-path: /var/lib/auth-system/video-workspace
+  output-prefix: processed_
+  quality-profiles:
+    low:
+      resolution: 640x360
+      bitrate: 800k
+    medium:
+      resolution: 1280x720
+      bitrate: 2500k
+    high:
+      resolution: 1920x1080
+      bitrate: 5000k
+  # Values above provide sensible defaults and can be overridden via the admin UI or environment-specific configuration.
