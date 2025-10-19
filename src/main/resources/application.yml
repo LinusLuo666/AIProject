@@ -45,3 +45,9 @@ springdoc:
     path: /api-docs
   swagger-ui:
     path: /swagger-ui.html
+
+ai:
+  provider: ${AI_PROVIDER:openai}
+  api-key: ${AI_API_KEY:demo-api-key}
+  model: ${AI_MODEL:gpt-3.5-turbo}
+  base-url: ${AI_BASE_URL:}
